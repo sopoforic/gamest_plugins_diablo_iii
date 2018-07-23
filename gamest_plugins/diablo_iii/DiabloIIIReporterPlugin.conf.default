@@ -1,0 +1,14 @@
+[DiabloIIIReporterPlugin]
+# Your user name from your Battle.Net profile URL. If your Battle.Net user name
+# in the launcher is listed as GamestUser#1234, then put GamestUser-1234 here.
+#
+# user_name = GamestUser-1234
+
+# The ID of the hero whose paragon level you wish to track.
+#
+# hero_id = 123456789
+
+# How often to send notifications, in milliseconds. The default is once per
+# hour.
+#
+# interval = 3600000

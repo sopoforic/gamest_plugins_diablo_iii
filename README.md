@@ -21,12 +21,26 @@ is:
 [DiabloIIIReporterPlugin]
 # Your user name from your Battle.Net profile URL. If your Battle.Net user name
 # in the launcher is listed as GamestUser#1234, then put GamestUser-1234 here.
+# This option is required.
 #
 # user_name = GamestUser-1234
 
-# The ID of the hero whose paragon level you wish to track.
+# The ID of the hero whose paragon level you wish to track. This option is
+# required.
 #
 # hero_id = 123456789
+
+# By default, this plugin determines which game is running based on the
+# executable path. This can fail if your executable has an unexpected filename
+# or if another game has the same filename. In that case, set the user_app_id
+# to the number displayed when gamest is detecting the game, and this plugin
+# will activate only for that app.
+#
+# user_app_id = 123
+
+# Record this plugin's reports to the database as status updates.
+#
+# add_status_updates = True
 
 # How often to send notifications, in milliseconds. The default is once per
 # hour.

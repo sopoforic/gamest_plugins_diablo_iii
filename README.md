@@ -36,7 +36,11 @@ is:
 # to the number displayed when gamest is detecting the game, and this plugin
 # will activate only for that app.
 #
+# To specify multiple app IDs (e.g. for different game versions), put one ID per
+# line, indenting each line after the first.
+#
 # user_app_id = 123
+#               188
 
 # Record this plugin's reports to the database as status updates.
 #

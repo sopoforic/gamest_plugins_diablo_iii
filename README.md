@@ -32,6 +32,14 @@ is:
 # hour.
 #
 # interval = 3600000
+
+# Send a report when the game is started.
+#
+# send_begin = True
+
+# Send a report when the game is closed.
+#
+# send_end = True
 ```
 
 ## License

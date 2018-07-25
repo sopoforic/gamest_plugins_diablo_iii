@@ -27,6 +27,7 @@ class DiabloIIIReporterPlugin(GameReporterPlugin):
         except:
             self.latest_stats = None
 
+        application.bind("<<GameStart{}>>".format(self.play_session.id), self.onGameStart, "+")
         application.bind("<<GameEnd{}>>".format(self.play_session.id), self.onGameEnd, "+")
 
         self.logger.debug("Plugin initialized.")

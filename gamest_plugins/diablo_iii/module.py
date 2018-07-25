@@ -1,8 +1,10 @@
+import json
 import textwrap
 
 import requests
 from bs4 import BeautifulSoup
 
+from gamest.db import get_settings, set_settings
 from gamest.errors import InvalidConfigurationError
 from gamest.plugins import GameReporterPlugin
 
@@ -23,7 +25,7 @@ class DiabloIIIReporterPlugin(GameReporterPlugin):
             raise InvalidConfigurationError("Hero ID not set.")
 
         try:
-            self.latest_stats = self.get_stats()
+            self.latest_stats = get_settings(self.__class__.__name__, 'latest_stats', json.loads) or self.get_stats()
         except:
             self.latest_stats = None
 
@@ -45,6 +47,7 @@ class DiabloIIIReporterPlugin(GameReporterPlugin):
         soup = BeautifulSoup(r.text, 'html.parser')
         stats['paragon_level'] = int(soup.find('span', class_='paragon-level').text[1:-1])
 
+        set_settings(self.__class__.__name__, 'latest_stats', json.dumps(stats))
         return stats
 
     def get_report(self):

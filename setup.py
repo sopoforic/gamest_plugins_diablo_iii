@@ -12,7 +12,7 @@ setup(
     author="Tracy Poff",
     author_email="tracy.poff@gmail.com",
     packages=['gamest_plugins.diablo_iii'],
-    install_requires=['gamest', 'requests', 'bs4'],
+    install_requires=['gamest>=1.2.2', 'requests', 'bs4'],
     setup_requires=['setuptools_scm'],
     use_scm_version=True,
 )

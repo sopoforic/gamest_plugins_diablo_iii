@@ -4,28 +4,18 @@ import textwrap
 import requests
 from bs4 import BeautifulSoup
 
-from gamest.db import get_settings, set_settings
 from gamest.errors import InvalidConfigurationError
 from gamest.plugins import GameReporterPlugin
 
 class DiabloIIIReporterPlugin(GameReporterPlugin):
+    SETTINGS_TAB_NAME = "Diablo III"
     PATH_ENDSWITH = ['Diablo III.exe', 'Diablo III64.exe']
 
     def __init__(self, application):
         super().__init__(application)
 
-        self.battle_net_user_name = self.config.get(self.__class__.__name__, 'user_name', fallback=None)
-        if not self.battle_net_user_name:
-            self.logger.error("User name not set.")
-            raise InvalidConfigurationError("User name not set.")
-        
-        self.hero_id = self.config.get(self.__class__.__name__, 'hero_id', fallback=None)
-        if not self.hero_id:
-            self.logger.error("Hero ID not set.")
-            raise InvalidConfigurationError("Hero ID not set.")
-
         try:
-            self.latest_stats = get_settings(self.__class__.__name__, 'latest_stats', json.loads) or self.get_stats()
+            self.latest_stats = self.config.get('latest_stats', type=json.loads) or self.get_stats()
         except:
             self.latest_stats = None
 
@@ -34,23 +24,51 @@ class DiabloIIIReporterPlugin(GameReporterPlugin):
 
         self.logger.debug("Plugin initialized.")
     
+    @property
+    def battle_net_user_name(self):
+        return self.config.get('user_name', fallback=None)
+
+    @property
+    def hero_id(self):
+        self.config.get('hero_id', fallback=None)
+
+    @classmethod
+    def get_settings_template(cls):
+        d = super().get_settings_template()
+        d[(cls.__name__, 'user_name')] = {
+            'name' : 'User name',
+            'type' : 'text',
+            'hint' : ("Your user name from your Battle.Net profile URL. If your "
+                      "Battle.Net user name in the launcher is listed as "
+                      "GamestUser#1234, then put GamestUser-1234 here.")
+        }
+        d[(cls.__name__, 'hero_id')] = {
+            'name' : 'Hero ID',
+            'type' : 'text',
+            'hint' : "The ID of the hero whose paragon level you wish to track."
+        }
+        return d
+
     def get_stats(self):
         stats = {}
-        r = requests.get('https://us.diablo3.com/en/profile/{user_name}/career'.format(user_name=self.battle_net_user_name))
-        r.raise_for_status()
-        soup = BeautifulSoup(r.text, 'html.parser')
-        stats['lifetime_kills'] = int(soup.find('div', class_='kill-section lifetime').find('span', class_='num-kills').text)
-        stats['elite_kills'] = int(soup.find('div', class_='kill-section elite').find('span', class_='num-kills').text)
+        if self.battle_net_user_name and self.hero_id:
+            r = requests.get('https://us.diablo3.com/en/profile/{user_name}/career'.format(user_name=self.battle_net_user_name))
+            r.raise_for_status()
+            soup = BeautifulSoup(r.text, 'html.parser')
+            stats['lifetime_kills'] = int(soup.find('div', class_='kill-section lifetime').find('span', class_='num-kills').text)
+            stats['elite_kills'] = int(soup.find('div', class_='kill-section elite').find('span', class_='num-kills').text)
 
-        r = requests.get('https://us.diablo3.com/en/profile/{user_name}/hero/{hero_id}'.format(user_name=self.battle_net_user_name, hero_id=self.hero_id))
-        r.raise_for_status()
-        soup = BeautifulSoup(r.text, 'html.parser')
-        stats['paragon_level'] = int(soup.find('span', class_='paragon-level').text[1:-1])
+            r = requests.get('https://us.diablo3.com/en/profile/{user_name}/hero/{hero_id}'.format(user_name=self.battle_net_user_name, hero_id=self.hero_id))
+            r.raise_for_status()
+            soup = BeautifulSoup(r.text, 'html.parser')
+            stats['paragon_level'] = int(soup.find('span', class_='paragon-level').text[1:-1])
 
-        set_settings(self.__class__.__name__, 'latest_stats', json.dumps(stats))
+            self.config.set('latest_stats', json.dumps(stats))
         return stats
 
     def get_report(self):
+        if not (self.battle_net_user_name and self.hero_id):
+            return None
         stats = self.get_stats()
         if stats == self.latest_stats:
             self.logger.debug("No change found in latest_stats.")

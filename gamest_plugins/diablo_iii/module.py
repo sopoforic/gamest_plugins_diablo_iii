@@ -23,14 +23,14 @@ class DiabloIIIReporterPlugin(GameReporterPlugin):
         application.bind("<<GameEnd{}>>".format(self.play_session.id), self.onGameEnd, "+")
 
         self.logger.debug("Plugin initialized.")
-    
+
     @property
     def battle_net_user_name(self):
         return self.config.get('user_name', fallback=None)
 
     @property
     def hero_id(self):
-        self.config.get('hero_id', fallback=None)
+        return self.config.get('hero_id', fallback=None)
 
     @classmethod
     def get_settings_template(cls):
@@ -55,13 +55,25 @@ class DiabloIIIReporterPlugin(GameReporterPlugin):
             r = requests.get('https://us.diablo3.com/en/profile/{user_name}/career'.format(user_name=self.battle_net_user_name))
             r.raise_for_status()
             soup = BeautifulSoup(r.text, 'html.parser')
-            stats['lifetime_kills'] = int(soup.find('div', class_='kill-section lifetime').find('span', class_='num-kills').text)
-            stats['elite_kills'] = int(soup.find('div', class_='kill-section elite').find('span', class_='num-kills').text)
+            try:
+                stats['lifetime_kills'] = int(soup.find('div', class_='kill-section lifetime').find('span', class_='num-kills').text)
+            except:
+                stats['lifetime_kills'] = 0
+                logger.warning("Could not get lifetime kills.")
+            try:
+                stats['elite_kills'] = int(soup.find('div', class_='kill-section elite').find('span', class_='num-kills').text)
+            except:
+                stats['elite_kills'] = 0
+                logger.warning("Could not get elite kills.")
 
             r = requests.get('https://us.diablo3.com/en/profile/{user_name}/hero/{hero_id}'.format(user_name=self.battle_net_user_name, hero_id=self.hero_id))
             r.raise_for_status()
             soup = BeautifulSoup(r.text, 'html.parser')
-            stats['paragon_level'] = int(soup.find('span', class_='paragon-level').text[1:-1])
+            try:
+                stats['paragon_level'] = int(soup.find('span', class_='paragon-level').text[1:-1])
+            except:
+                stats['paragon_level'] = 0
+                logger.warning("Could not get paragon level.")
 
             self.config.set('latest_stats', json.dumps(stats))
         return stats

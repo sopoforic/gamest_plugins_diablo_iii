@@ -49,34 +49,42 @@ class DiabloIIIReporterPlugin(GameReporterPlugin):
         }
         return d
 
-    def get_stats(self):
-        stats = {}
-        if self.battle_net_user_name and self.hero_id:
-            r = requests.get('https://us.diablo3.com/en/profile/{user_name}/career'.format(user_name=self.battle_net_user_name))
-            r.raise_for_status()
-            soup = BeautifulSoup(r.text, 'html.parser')
-            try:
-                stats['lifetime_kills'] = int(soup.find('div', class_='kill-section lifetime').find('span', class_='num-kills').text)
-            except:
-                stats['lifetime_kills'] = 0
-                logger.warning("Could not get lifetime kills.")
-            try:
-                stats['elite_kills'] = int(soup.find('div', class_='kill-section elite').find('span', class_='num-kills').text)
-            except:
-                stats['elite_kills'] = 0
-                logger.warning("Could not get elite kills.")
+    @staticmethod
+    def _get_stats(user_name, hero_id):
+        stats = {
+            'lifetime_kills' : 0,
+            'elite_kills' : 0,
+            'paragon_level' : 0,
+        }
+        r = requests.get('https://us.diablo3.com/en/profile/{user_name}/career'.format(user_name=user_name))
+        r.raise_for_status()
+        soup = BeautifulSoup(r.text, 'html.parser')
+        try:
+            stats['lifetime_kills'] = int(soup.find('div', class_='kill-section lifetime').find('span', class_='num-kills').text)
+        except:
+            pass
+        try:
+            stats['elite_kills'] = int(soup.find('div', class_='kill-section elite').find('span', class_='num-kills').text)
+        except:
+            pass
 
-            r = requests.get('https://us.diablo3.com/en/profile/{user_name}/hero/{hero_id}'.format(user_name=self.battle_net_user_name, hero_id=self.hero_id))
-            r.raise_for_status()
-            soup = BeautifulSoup(r.text, 'html.parser')
-            try:
-                stats['paragon_level'] = int(soup.find('span', class_='paragon-level').text[1:-1])
-            except:
-                stats['paragon_level'] = 0
-                logger.warning("Could not get paragon level.")
+        r = requests.get('https://us.diablo3.com/en/profile/{user_name}/hero/{hero_id}'.format(user_name=user_name, hero_id=hero_id))
+        r.raise_for_status()
+        soup = BeautifulSoup(r.text, 'html.parser')
+        try:
+            stats['paragon_level'] = int(soup.find('span', class_='paragon-level').text[1:-1].replace(',', ''))
+        except:
+            pass
 
-            self.config.set('latest_stats', json.dumps(stats))
         return stats
+
+    def get_stats(self):
+        if self.battle_net_user_name and self.hero_id:
+            stats = self._get_stats(self.battle_net_user_name, self.hero_id)
+            self.config.set('latest_stats', json.dumps(stats))
+            return stats
+        else:
+            return {}
 
     def get_report(self):
         if not (self.battle_net_user_name and self.hero_id):

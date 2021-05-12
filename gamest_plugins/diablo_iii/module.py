@@ -81,6 +81,8 @@ class DiabloIIIReporterPlugin(GameReporterPlugin):
     def get_stats(self):
         if self.battle_net_user_name and self.hero_id:
             stats = self._get_stats(self.battle_net_user_name, self.hero_id)
+            if all(v == 0 for v in stats.values()):
+                raise RuntimeError("Could not parse any data. Plugin likely out of date.")
             self.config.set('latest_stats', json.dumps(stats))
             return stats
         else:
